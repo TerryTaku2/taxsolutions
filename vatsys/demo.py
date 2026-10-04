@@ -4,9 +4,14 @@
 
 Sign in as demo@example.com / demo-password-123. The exchange rates loaded are
 SAMPLE values, not official RBZ rates.
+
+On a public demo server, set VATSYS_PUBLIC_DEMO=1 so the demo account is a regular
+user: its password is published, so it must not be able to change VAT rates,
+exchange rates or global rules.
 """
 
 import csv
+import os
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -29,7 +34,9 @@ def load_demo(db: Database, storage_dir: Path) -> None:
             print("Demo data already loaded.")
             return
         first = s.scalar(select(User.id).limit(1)) is None
-        user = User(email=EMAIL, name="Demo User", password_hash=hash_password(PASSWORD), is_admin=first)
+        public = os.environ.get("VATSYS_PUBLIC_DEMO", "").lower() in ("1", "true", "yes")
+        user = User(email=EMAIL, name="Demo User", password_hash=hash_password(PASSWORD),
+                    is_admin=first and not public)
         s.add(user)
         s.flush()
         business = Business(owner_id=user.id, name="Sample Haulage (Pvt) Ltd", vat_number="10099999",

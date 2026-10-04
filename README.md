@@ -58,6 +58,18 @@ Run the tests with `.venv/Scripts/python -m pytest`.
 8. **Registration**: for a business with no VAT number, the dashboard tracks taxable sales over the last 12 months against the US$25,000 registration threshold. It warns at 80% and says when registration is required (s23).
 9. **Reminders**: the dashboard shows the next deadline (25th of the month after the period ends). `python -m vatsys.reminders` sends emails 10, 5 and 2 days before each deadline. Run it daily from Task Scheduler or cron. SMTP is set with `VATSYS_SMTP_*` variables; if SMTP isn't set, reminders are printed instead.
 
+## Deploying a public demo (Render)
+
+Create a Web Service from this repository with:
+
+| Setting | Value |
+|---|---|
+| Build command | `pip install -r requirements.txt` |
+| Start command | `python -m vatsys.demo && uvicorn vatsys.web.app:create_app --factory --host 0.0.0.0 --port $PORT` |
+| Environment variables | `VATSYS_SECRET_KEY` (a long random value) and `VATSYS_PUBLIC_DEMO=1` |
+
+`VATSYS_PUBLIC_DEMO=1` makes the demo account a regular user, because its password is published. On Render's free plan the disk is wiped whenever the service restarts, so the start command reloads the demo data each time; that also resets any changes visitors make. Don't put real client data on a free instance: it has no persistent storage. For real use, attach a persistent disk or a PostgreSQL database (`VATSYS_DATABASE_URL`).
+
 ## Configuration
 
 | Variable | Default | Purpose |
@@ -117,5 +129,3 @@ These parts of the VAT Rules Guide are not built yet:
 - PDF bank statements and old `.xls` files. Users must save these as CSV or `.xlsx`.
 - Encryption at rest. Use an encrypted disk or a managed database with encryption, and serve the app over HTTPS behind a reverse proxy.
 - Roles within a business. Each business has one owner; administrators can see all businesses.
-#   t a x s o l u t i o n s  
- 
