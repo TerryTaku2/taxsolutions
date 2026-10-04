@@ -25,6 +25,7 @@ from ..checks import run_checks
 from ..classify import validate_rule_pattern
 from ..compute import LINE_LABELS, compute_return
 from ..db import Database
+from ..demo import EMAIL as DEMO_EMAIL
 from ..export import return_to_csv, return_to_xlsx
 from ..ingest import (
     FIELD_LABELS,
@@ -158,8 +159,12 @@ def create_app(db: Database | None = None, storage_dir: Path | None = None) -> F
             request.session["csrf"] = secrets.token_urlsafe(32)
         ctx.setdefault("user", None)
         messages = request.session.pop("flash", [])
+        # A sign-in is reported to the visitor counter once, on the first page after it.
+        count_event = request.session.pop("count_event", None) if config.GOATCOUNTER_URL else None
         return templates.TemplateResponse(request, name, {"csrf": request.session["csrf"], "messages": messages,
-                                                          **ctx}, status_code=status_code)
+                                                          "goatcounter": config.GOATCOUNTER_URL,
+                                                          "count_event": count_event, **ctx},
+                                          status_code=status_code)
 
     def redirect(url: str) -> RedirectResponse:
         return RedirectResponse(url, status_code=303)
@@ -191,6 +196,7 @@ def create_app(db: Database | None = None, storage_dir: Path | None = None) -> F
             return redirect("/login")
         request.session.clear()
         request.session["uid"] = user.id
+        request.session["count_event"] = "demo-sign-in" if user.email == DEMO_EMAIL else "sign-in"
         return redirect("/")
 
     @app.get("/register", response_class=HTMLResponse)
@@ -215,6 +221,7 @@ def create_app(db: Database | None = None, storage_dir: Path | None = None) -> F
         s.commit()
         request.session.clear()
         request.session["uid"] = user.id
+        request.session["count_event"] = "register"
         return redirect("/")
 
     @app.post("/logout", dependencies=[Depends(csrf_protect)])

@@ -52,5 +52,22 @@
   {% endif %}
   {% block content %}{% endblock %}
 </main>
+{% if goatcounter %}
+<script>
+  // Count page addresses only, with record numbers grouped (/b/1/transactions/57 -> /b/:id/transactions/:id),
+  // so nothing about a business or its data is sent.
+  window.goatcounter = {path: function () { return location.pathname.replace(/\/\d+(?=\/|$)/g, '/:id') || '/'; }};
+</script>
+<script data-goatcounter="{{ goatcounter }}" async src="//gc.zgo.at/count.js"></script>
+{% if count_event %}
+<script>
+  window.addEventListener('load', function () {
+    if (window.goatcounter && window.goatcounter.count) {
+      window.goatcounter.count({path: '{{ count_event }}', title: '{{ count_event }}', event: true});
+    }
+  });
+</script>
+{% endif %}
+{% endif %}
 </body>
 </html>

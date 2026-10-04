@@ -66,7 +66,7 @@ Create a Web Service from this repository with:
 |---|---|
 | Build command | `pip install -r requirements.txt` |
 | Start command | `python -m vatsys.demo && uvicorn vatsys.web.app:create_app --factory --host 0.0.0.0 --port $PORT` |
-| Environment variables | `VATSYS_SECRET_KEY` (a long random value) and `VATSYS_PUBLIC_DEMO=1` |
+| Environment variables | `VATSYS_SECRET_KEY` (a long random value), `VATSYS_PUBLIC_DEMO=1`, and optionally `VATSYS_GOATCOUNTER` to count visitors |
 
 `VATSYS_PUBLIC_DEMO=1` makes the demo account a regular user, because its password is published. On Render's free plan the disk is wiped whenever the service restarts, so the start command reloads the demo data each time; that also resets any changes visitors make. Don't put real client data on a free instance: it has no persistent storage. For real use, attach a persistent disk or a PostgreSQL database (`VATSYS_DATABASE_URL`).
 
@@ -80,6 +80,7 @@ Create a Web Service from this repository with:
 | `VATSYS_REVIEW_THRESHOLD` | `0.8` | Classifications below this confidence are flagged |
 | `VATSYS_REMINDER_DAYS` | `10,5,2` | Days before a deadline to send reminders |
 | `VATSYS_SMTP_HOST`, `_PORT`, `_USER`, `_PASSWORD`, `_FROM` | | Reminder email |
+| `VATSYS_GOATCOUNTER` | not set | GoatCounter count URL (e.g. `https://name.goatcounter.com/count`) to count visitors and sign-ins. Only page addresses are sent, with record numbers grouped |
 | `VATSYS_REGISTRATION_THRESHOLD` | `25000` | USD taxable turnover in 12 months above which registration is required (s23) |
 | `VATSYS_REGISTRATION_WARNING_SHARE` | `0.8` | Share of the threshold at which unregistered businesses are warned |
 | `VATSYS_MIN_REFUND` | `60` | USD refunds at or below this are carried forward (s44) |

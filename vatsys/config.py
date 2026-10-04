@@ -23,6 +23,9 @@ REVIEW_CONFIDENCE_THRESHOLD = float(os.environ.get("VATSYS_REVIEW_THRESHOLD", "0
 # Days before a filing deadline on which reminders are sent.
 REMINDER_DAYS = [int(d) for d in os.environ.get("VATSYS_REMINDER_DAYS", "10,5,2").split(",")]
 
+# GoatCounter visitor counting, e.g. https://name.goatcounter.com/count. Unset: nothing is counted.
+GOATCOUNTER_URL = os.environ.get("VATSYS_GOATCOUNTER") or None
+
 SMTP_HOST = os.environ.get("VATSYS_SMTP_HOST")
 SMTP_PORT = int(os.environ.get("VATSYS_SMTP_PORT", "587"))
 SMTP_USER = os.environ.get("VATSYS_SMTP_USER")
