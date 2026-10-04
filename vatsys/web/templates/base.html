@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}VAT Computation System{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="/">T-Tech <span>VAT</span></a>
+    {% if user %}
+    <nav class="main">
+      <a href="/">Businesses</a>
+      <a href="/settings/reference">Reference lists</a>
+      <a href="/settings/rules">Classification rules</a>
+      <a href="/settings/rates">VAT rates</a>
+      <a href="/settings/fx">Exchange rates</a>
+    </nav>
+    <a class="muted small" href="/account/password" title="Change password">{{ user.name }}{% if user.is_admin %} · admin{% endif %}</a>
+    <form class="inline" method="post" action="/logout">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="link small">Sign out</button>
+    </form>
+    {% endif %}
+  </div>
+</header>
+<main>
+  {% for level, message in messages %}<div class="flash {{ level }}">{{ message }}</div>{% endfor %}
+  {% if business %}
+  <div class="page-head">
+    <div>
+      <div class="muted small"><a href="/">Businesses</a> /</div>
+      <h1>{{ business.name }}</h1>
+      <div class="muted small">
+        {% if business.vat_number %}VAT {{ business.vat_number }} · {% endif %}{% if business.bp_number %}BP {{ business.bp_number }} · {% endif %}
+        {{ FILING_FREQUENCIES[business.filing_frequency] }} · reporting in {{ business.reporting_currency }}
+      </div>
+    </div>
+  </div>
+  {% set path = request.url.path %}
+  <nav class="subnav">
+    <a href="/b/{{ business.id }}" class="{{ 'active' if path == '/b/' ~ business.id }}">Overview</a>
+    <a href="/b/{{ business.id }}/uploads" class="{{ 'active' if '/uploads' in path }}">Uploads</a>
+    <a href="/b/{{ business.id }}/review" class="{{ 'active' if '/review' in path }}">Questions</a>
+    <a href="/b/{{ business.id }}/transactions" class="{{ 'active' if '/transactions' in path }}">Transactions</a>
+    <a href="/settings/rules?business={{ business.id }}" class="{{ 'active' if '/settings/rules' in path }}">Rules</a>
+    <a href="/b/{{ business.id }}/audit" class="{{ 'active' if '/audit' in path }}">Audit log</a>
+    <a href="/b/{{ business.id }}/settings" class="{{ 'active' if '/settings' in path and 'rules' not in path }}">Settings</a>
+  </nav>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

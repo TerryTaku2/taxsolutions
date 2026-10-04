@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" action="/b/{{ business.id }}/uploads" enctype="multipart/form-data" class="card">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <h2 style="margin-top:0">Upload transactions</h2>
+  <div class="form-grid">
+    <div class="wide"><label for="file">File (Excel .xlsx or CSV)</label>
+      <input id="file" type="file" name="file" accept=".csv,.xlsx,.xlsm,.txt" required></div>
+    <div><label for="source_type">What is this file?</label>
+      <select id="source_type" name="source_type">
+        {% for k, v in source_types.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+      </select></div>
+    <div><label for="default_direction">Rows are</label>
+      <select id="default_direction" name="default_direction">
+        <option value="auto">Detect (money in = sale, money out = purchase)</option>
+        <option value="sale">All sales</option>
+        <option value="purchase">All purchases</option>
+      </select></div>
+    <div><label for="default_currency">Currency if not stated in the file</label>
+      <select id="default_currency" name="default_currency">
+        {% for c in CURRENCIES %}<option>{{ c }}</option>{% endfor %}
+      </select></div>
+    <div><label for="amounts_include_vat">Amounts</label>
+      <select id="amounts_include_vat" name="amounts_include_vat">
+        <option value="yes">Include VAT (gross)</option>
+        <option value="no">Exclude VAT (net)</option>
+      </select></div>
+  </div>
+  <p class="small muted">Columns are detected from the headings. Bank statements and mobile money exports usually include payments that are already in your sales or purchases list: upload one source per transaction, not both.</p>
+  <div class="actions"><button>Upload and read</button></div>
+</form>
+
+<h2>Uploaded files</h2>
+{% if uploads %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>File</th><th>Type</th><th>Uploaded</th><th class="num">Imported</th><th class="num">Unreadable</th><th class="num">Read rate</th></tr></thead>
+  <tbody>
+  {% for u in uploads %}
+  <tr>
+    <td><a href="/b/{{ business.id }}/uploads/{{ u.id }}">{{ u.filename }}</a></td>
+    <td>{{ source_types.get(u.source_type, u.source_type) }}</td>
+    <td class="nowrap">{{ u.created_at|d }}</td>
+    <td class="num">{{ u.rows_imported }}</td>
+    <td class="num">{% if u.rows_failed %}<span class="badge err">{{ u.rows_failed }}</span>{% else %}0{% endif %}</td>
+    <td class="num">{% if u.read_rate is not none %}{{ '%.1f' % (u.read_rate * 100) }}%{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">No files uploaded yet. Try the files in the <code>sample_data</code> folder.</p>
+{% endif %}
+{% endblock %}

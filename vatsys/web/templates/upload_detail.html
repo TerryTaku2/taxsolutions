@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2 style="margin-top:0">{{ upload.filename }}</h2>
+    <div class="muted small">{{ source_types.get(upload.source_type, upload.source_type) }} · uploaded {{ upload.created_at|d }} · amounts {{ 'include' if upload.amounts_include_vat else 'exclude' }} VAT</div>
+  </div>
+  <a class="button" href="/b/{{ business.id }}/transactions?upload={{ upload.id }}">Review transactions</a>
+</div>
+
+<div class="cards" style="margin-top:1rem">
+  <div class="card stat"><div class="label">Imported</div><div class="value">{{ upload.rows_imported }}</div></div>
+  <div class="card stat"><div class="label">Could not read</div><div class="value">{{ upload.rows_failed }}</div></div>
+  <div class="card stat"><div class="label">Skipped (balances, totals, blanks)</div><div class="value">{{ upload.rows_ignored }}</div></div>
+  <div class="card stat"><div class="label">Read rate</div><div class="value">{% if upload.read_rate is not none %}{{ '%.1f' % (upload.read_rate * 100) }}%{% else %}—{% endif %}</div></div>
+</div>
+
+{% if counts %}
+<h3>What was found</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Direction</th><th>VAT category</th><th class="num">Rows</th></tr></thead>
+  <tbody>{% for (direction, cat), n in counts|dictsort %}
+    <tr><td>{{ DIRECTIONS[direction] }}</td><td>{{ VAT_CATEGORIES[cat] }}</td><td class="num">{{ n }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+{% if upload.row_errors %}
+<h3>Rows that could not be read</h3>
+<p class="small muted">Fix these in the file and upload again, or correct the column mapping below.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Row</th><th>Problem</th><th>Values</th></tr></thead>
+  <tbody>{% for e in upload.row_errors[:200] %}
+    <tr><td>{{ e.row }}</td><td>{{ e.errors|join('; ') }}</td>
+      <td class="small">{% for k, v in e['values'].items() %}<b>{{ k }}</b>: {{ v }}{% if not loop.last %} · {% endif %}{% endfor %}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+<h3>Column mapping</h3>
+<p class="small muted">Detected from row {{ (upload.header_row or 0) + 1 }} of the file. If a column was missed or matched wrongly, change it and re-import. Re-importing replaces this file's transactions, including any classifications you changed by hand.</p>
+{% if preview %}
+<div class="table-wrap preview" style="margin-bottom:1rem"><table>
+  <tbody>
+  {% for row in preview %}
+    <tr class="{{ 'header' if loop.first }}">
+      <td class="muted">{{ header_row + loop.index }}</td>
+      {% for c in row %}<td>{{ c if c is not none }}</td>{% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+
+<form method="post" action="/b/{{ business.id }}/uploads/{{ upload.id }}/reprocess" class="card">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <div class="form-grid">
+    <div><label for="header_row">Heading row number</label>
+      <input id="header_row" name="header_row" type="number" min="1" value="{{ (upload.header_row or 0) + 1 }}"></div>
+    {% for fld, label in FIELD_LABELS.items() %}
+    <div><label for="map_{{ fld }}">{{ label }}</label>
+      <select id="map_{{ fld }}" name="map_{{ fld }}">
+        <option value="">— not in file —</option>
+        {% for h in upload.headers or [] %}
+          <option value="{{ loop.index0 }}" {{ 'selected' if upload.mapping and upload.mapping.get(fld) == loop.index0 }}>{{ h }}</option>
+        {% endfor %}
+      </select></div>
+    {% endfor %}
+    <div><label for="source_type">File type</label>
+      <select id="source_type" name="source_type">{% for k, v in source_types.items() %}<option value="{{ k }}" {{ 'selected' if upload.source_type == k }}>{{ v }}</option>{% endfor %}</select></div>
+    <div><label for="default_direction">Rows are</label>
+      <select id="default_direction" name="default_direction">
+        {% for k, v in [('auto', 'Detect'), ('sale', 'All sales'), ('purchase', 'All purchases')] %}<option value="{{ k }}" {{ 'selected' if upload.default_direction == k }}>{{ v }}</option>{% endfor %}
+      </select></div>
+    <div><label for="default_currency">Default currency</label>
+      <select id="default_currency" name="default_currency">{% for c in CURRENCIES %}<option {{ 'selected' if upload.default_currency == c }}>{{ c }}</option>{% endfor %}</select></div>
+    <div><label for="amounts_include_vat">Amounts</label>
+      <select id="amounts_include_vat" name="amounts_include_vat">
+        <option value="yes" {{ 'selected' if upload.amounts_include_vat }}>Include VAT</option>
+        <option value="no" {{ 'selected' if not upload.amounts_include_vat }}>Exclude VAT</option>
+      </select></div>
+  </div>
+  <p class="small muted">To use a different heading row, change the number and leave the columns as they are; they will be detected again.</p>
+  <div class="actions"><button>Re-import with these settings</button></div>
+</form>
+
+<form method="post" action="/b/{{ business.id }}/uploads/{{ upload.id }}/delete" class="actions"
+      onsubmit="return confirm('Delete this upload and all its transactions?')">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <button class="danger small">Delete upload</button>
+</form>
+{% endblock %}

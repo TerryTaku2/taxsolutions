@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 style="margin-top:0">Questions about your transactions</h2>
+{% if groups %}
+<p class="muted">The system couldn't tell how VAT applies to these transactions from their descriptions. Answer in your own words below; you don't need to know the VAT categories. Similar transactions are grouped, so one answer covers them all. {{ total }} transaction{{ 's' if total != 1 }} in {{ groups|length }} group{{ 's' if groups|length != 1 }}.</p>
+
+{% for g in groups %}
+<form method="post" action="/b/{{ business.id }}/review" class="card question">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="group" value="{{ g.token }}">
+  <div class="q-head">
+    <div>
+      <div class="muted small">{{ 'Money received' if g.direction == 'sale' else 'Money paid out' }} · {{ g.txns|length }} transaction{{ 's' if g.txns|length != 1 }}
+        · {% if g.first_date == g.last_date %}{{ g.first_date|d }}{% else %}{{ g.first_date|d }} to {{ g.last_date|d }}{% endif %}</div>
+      <h3>{{ g.title }}</h3>
+      {% if g.key[1] == 'party' %}<div class="small muted">{{ g.descriptions|join(' · ') }}{% if g.txns|length > 3 %} …{% endif %}</div>{% endif %}
+    </div>
+    <div class="q-amount">{% for c, v in g.totals|dictsort %}<div>{{ CURRENCY_NAMES.get(c, c) }} {{ v|money }}</div>{% endfor %}
+      <a class="small" href="/b/{{ business.id }}/transactions?ids={{ g.txns|map(attribute='id')|join(',') }}">See transactions</a></div>
+  </div>
+  <fieldset>
+    <legend>{{ g.question }}</legend>
+    {% for a in g.answers %}
+    <label class="answer"><input type="radio" name="answer" value="{{ a.key }}" required>
+      <span><strong>{{ a.label }}</strong><span class="small muted">{{ a.help }}</span></span></label>
+    {% endfor %}
+  </fieldset>
+  <div class="actions">
+    <label class="small"><input type="checkbox" name="remember" value="yes" checked>
+      Treat future transactions {{ ('with ' ~ g.title) if g.key[1] == 'party' else 'like this' }} the same way</label>
+    <button>Save answer</button>
+  </div>
+</form>
+{% endfor %}
+<p class="small muted">Not sure? Leave a group for now and ask your accountant; it stays here and the return shows it as needing review. You can change any answer later on the Transactions page.</p>
+{% else %}
+<div class="issue info"><strong>No questions right now.</strong>
+  <div class="detail">Every transaction has been classified. New uploads that the system can't classify will appear here.</div></div>
+<div class="actions"><a class="button" href="/b/{{ business.id }}">Back to overview</a></div>
+{% endif %}
+{% endblock %}

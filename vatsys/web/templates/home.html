@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Businesses</h1>
+    <p class="muted">Each business has its own transactions, rules and returns.</p>
+  </div>
+  <a class="button" href="/businesses/new">Add a business</a>
+</div>
+
+{% if rows %}
+<div class="table-wrap" style="margin-top:1rem">
+<table>
+  <thead><tr><th>Business</th>{% if user.is_admin %}<th>Account holder</th>{% endif %}<th>VAT number</th><th>Next return</th><th>Due</th><th class="num">To pay</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for b, d in rows %}
+    <tr>
+      <td><a href="/b/{{ b.id }}">{{ b.name }}</a>{% if b.sector %}<div class="muted small">{{ b.sector }}</div>{% endif %}</td>
+      {% if user.is_admin %}<td class="small">{{ 'You' if b.owner_id == user.id else b.owner_label }}</td>{% endif %}
+      <td>{{ b.vat_number or '—' }}</td>
+      <td><a href="/b/{{ b.id }}/returns/{{ d.period.key }}">{{ d.period.label }}</a></td>
+      <td class="nowrap">{{ d.period.due_date|d }}</td>
+      {% set sm = b.due_summary %}
+      <td class="num nowrap">{% for c, v in sm.payable|dictsort %}{{ CURRENCY_NAMES.get(c, c) }} {{ v|money }}{{ '<br>'|safe if not loop.last }}{% else %}{% if sm.refundable %}<span class="muted small">Refund due</span>{% elif sm.status == 'no_data' %}<span class="muted small">No data</span>{% else %}<span class="muted">0.00</span>{% endif %}{% endfor %}{% if sm.attention %}<div class="small"><span class="badge warn">{{ sm.attention|length }} to check</span></div>{% endif %}</td>
+      <td>
+        {% if d.finalised %}<span class="badge ok">Finalised</span>
+        {% elif d.days_left <= 5 %}<span class="badge err">{{ d.days_left }} day{{ 's' if d.days_left != 1 }} left</span>
+        {% elif d.days_left <= 10 %}<span class="badge warn">{{ d.days_left }} days left</span>
+        {% else %}<span class="badge">{{ d.days_left }} days left</span>{% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="card" style="margin-top:1rem">
+  <p>No businesses yet. Add the first VAT-registered business to start uploading transactions.</p>
+</div>
+{% endif %}
+{% endblock %}

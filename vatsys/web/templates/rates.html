@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>VAT rates</h1>
+<p class="muted">Each transaction uses the rate in force on its date. When the law changes, add the new rate with its start date; the previous rate is closed the day before. Returns already finalised keep their recorded figures.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Category</th><th class="num">Rate</th><th>From</th><th>To</th><th>Note</th><th></th></tr></thead>
+  <tbody>{% for r in rates %}
+    <tr>
+      <td>{{ VAT_CATEGORIES[r.category] }}</td><td class="num">{{ r.rate|pct }}</td>
+      <td>{{ r.effective_from|d }}</td><td>{{ r.effective_to|d if r.effective_to else 'current' }}</td>
+      <td class="small">{{ r.note or '' }}</td>
+      <td>{% if user.is_admin %}<form class="inline" method="post" action="/settings/rates/{{ r.id }}/delete" onsubmit="return confirm('Delete this rate?')"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link small">Delete</button></form>{% endif %}</td>
+    </tr>
+  {% endfor %}</tbody>
+</table></div>
+
+{% if user.is_admin %}
+<form method="post" action="/settings/rates" class="card" style="margin-top:1.5rem">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <h3 style="margin-top:0">Add a rate change</h3>
+  <div class="form-grid">
+    <div><label for="category">Category</label><select id="category" name="category"><option value="standard">Standard-rated</option><option value="zero">Zero-rated</option></select></div>
+    <div><label for="rate">Rate (%)</label><input id="rate" name="rate" required inputmode="decimal"></div>
+    <div><label for="effective_from">Applies from</label><input id="effective_from" name="effective_from" type="date" required></div>
+    <div><label for="note">Note (e.g. Finance Act reference)</label><input id="note" name="note"></div>
+  </div>
+  <div class="actions"><button>Add rate</button></div>
+</form>
+{% else %}<p class="small muted">Only an administrator can change rates.</p>{% endif %}
+{% endblock %}

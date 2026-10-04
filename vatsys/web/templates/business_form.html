@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+{% if not business %}<h1>Add a business</h1>{% endif %}
+<form method="post" class="card" action="{{ '/b/%d/settings' % business.id if business else '/businesses/new' }}">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <div class="form-grid">
+    <div class="wide"><label for="name">Registered name</label>
+      <input id="name" name="name" required value="{{ business.name if business }}"></div>
+    <div><label for="vat_number">VAT number</label>
+      <input id="vat_number" name="vat_number" value="{{ business.vat_number or '' if business }}"></div>
+    <div><label for="bp_number">BP number</label>
+      <input id="bp_number" name="bp_number" value="{{ business.bp_number or '' if business }}"></div>
+    <div><label for="sector">Sector</label>
+      <input id="sector" name="sector" placeholder="e.g. Transport" value="{{ business.sector or '' if business }}"></div>
+    <div><label for="contact_email">Email for deadline reminders</label>
+      <input id="contact_email" name="contact_email" type="email" value="{{ business.contact_email or '' if business }}"></div>
+    <div><label for="filing_frequency">Tax periods</label>
+      <select id="filing_frequency" name="filing_frequency">
+        {% for k, v in FILING_FREQUENCIES.items() %}<option value="{{ k }}" {{ 'selected' if business and business.filing_frequency == k }}>{{ v }}</option>{% endfor %}
+      </select></div>
+    <div><label for="reporting_currency">Reporting currency (for totals)</label>
+      <select id="reporting_currency" name="reporting_currency">
+        {% for c in CURRENCIES %}<option {{ 'selected' if business and business.reporting_currency == c }}>{{ c }}</option>{% endfor %}
+      </select></div>
+  </div>
+  {% if user.is_admin %}
+  <h3>Account holder</h3>
+  <p class="small muted">
+    {% if owner %}Currently: <strong>{{ owner.email }}</strong>{% if owner.id == user.id %} (you){% endif %}{% if owner.must_change_password %} · has not yet replaced the temporary password{% endif %}.{% endif %}
+    To let the business sign in to its own account, enter its email and a temporary password, then pass the password on to them.
+    They will be asked to choose their own password when they first sign in. If the email already has an account, the business is
+    moved to it; a temporary password then resets that account's password. Leave blank to {{ 'keep the current holder' if business else 'keep the business in your account' }}.</p>
+  <div class="form-grid">
+    <div><label for="owner_email">Account holder's email</label>
+      <input id="owner_email" name="owner_email" type="email" autocomplete="off"></div>
+    <div><label for="owner_name">Name (new accounts)</label>
+      <input id="owner_name" name="owner_name" autocomplete="off"></div>
+    <div><label for="temp_password">Temporary password (at least 10 characters)</label>
+      <input id="temp_password" name="temp_password" type="text" minlength="10" autocomplete="new-password"></div>
+  </div>
+  {% endif %}
+  <p class="small muted">Check your tax period category on your VAT registration certificate. Each return also shows figures in the original transaction currency.</p>
+  <div class="actions"><button>{{ 'Save' if business else 'Create business' }}</button></div>
+</form>
+{% endblock %}

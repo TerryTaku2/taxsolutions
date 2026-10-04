@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+{% set rc = result.reporting_currency %}
+<p class="small"><a href="/b/{{ business.id }}/returns/{{ period.key }}">← Return for {{ period.label }}</a></p>
+<h2 style="margin-top:0">{{ line.label }}</h2>
+<p>Total <strong>{{ line.total|money }} {{ rc }}</strong>
+  {% for c in result.currencies %}· {{ line.by_currency[c]|money }} {{ c }} {% endfor %}
+  · {{ calcs|length }} transaction(s)</p>
+<p class="small muted">Each row shows how its VAT was worked out. Net and VAT come from the amount and the rate in force on the transaction date; the {{ rc }} columns convert them at the exchange rate shown.</p>
+<div class="table-wrap">
+<table>
+  <thead><tr>
+    <th>Date</th><th>Description</th><th>Category</th><th class="num">Amount</th><th class="num">VAT rate</th>
+    <th class="num">Net</th><th class="num">VAT</th><th class="num">FX rate (date)</th><th class="num">Net {{ rc }}</th><th class="num">VAT {{ rc }}</th><th>Source</th>
+  </tr></thead>
+  <tbody>
+  {% for c in calcs %}{% set t = c.txn %}
+    <tr>
+      <td class="nowrap">{{ t.txn_date|d }}</td>
+      <td><a href="/b/{{ business.id }}/transactions/{{ t.id }}">{{ t.description }}</a>
+        <div class="muted small">{{ t.counterparty or '' }}{% if t.invoice_number %} · {{ t.invoice_number }}{% endif %}</div></td>
+      <td>{{ VAT_CATEGORIES[t.vat_category] }}{% if t.direction == 'purchase' and t.vat_category == 'standard' %}<div class="muted small">{{ INPUT_TYPES[t.input_type] }}</div>{% endif %}</td>
+      <td class="num">{{ t.amount|money }} {{ t.currency }}<div class="muted small">{{ 'incl.' if t.amount_includes_vat else 'excl.' }} VAT</div></td>
+      <td class="num">{{ c.rate|pct }}</td>
+      <td class="num">{{ c.net|money }}</td>
+      <td class="num">{{ c.vat|money }}</td>
+      <td class="num">{% if t.currency != rc %}{{ '%.6f'|format(c.fx_rate) }}<div class="muted small">{{ c.fx_date|d }}</div>{% else %}—{% endif %}</td>
+      <td class="num">{{ c.net_rep|money }}</td>
+      <td class="num">{{ c.vat_rep|money }}</td>
+      <td class="small">{% if t.upload %}<a href="/b/{{ business.id }}/uploads/{{ t.upload_id }}">{{ t.upload.filename }}</a> row {{ t.row_number }}{% else %}Entered by hand{% endif %}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="11" class="muted">No transactions on this line.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

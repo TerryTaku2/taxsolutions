@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block content %}
+{% if registration %}
+{% set r = registration %}
+<div class="issue {{ 'error' if r.must_register else ('warning' if r.approaching else 'info') }}">
+  <strong>{% if r.must_register %}VAT registration required{% elif r.approaching %}Approaching the VAT registration threshold{% else %}Not registered for VAT{% endif %}</strong>
+  <div class="detail">Taxable sales in the 12 months to {{ r.window_end|d }}: US${{ r.turnover|money }} of the US${{ r.threshold|money }} threshold ({{ '%.0f'|format(r.share * 100) }}%).
+    {% if r.must_register %}Apply to ZIMRA within 30 days of exceeding it (s23(1)–(2)).{% elif r.approaching %}Registration becomes compulsory once taxable sales in any 12 months exceed the threshold, or are expected to in the next 12 months (s23(1)).{% else %}Add the VAT number in the business settings once registered.{% endif %}
+    {% if r.unconverted %}{{ r.unconverted }} ZiG sale(s) were left out because no exchange rate was found.{% endif %}</div>
+</div>
+{% endif %}
+{% for p in overdue|reverse %}
+<div class="issue error"><strong>The {{ p.label }} return was due on {{ p.due_date.strftime('%d %B %Y') }} and hasn't been filed.</strong>
+  <div class="detail">Late returns cost US$30 a day, and unpaid VAT attracts a penalty equal to the tax plus interest. <a href="/b/{{ business.id }}/returns/{{ p.key }}">File it now</a>; if you already filed it in TaRMS, open it and click Finalise so the system knows.</div></div>
+{% endfor %}
+{% set due = summaries[0] %}
+<div class="card owe {{ due.tone }}">
+  <div class="owe-label">VAT return for {{ due.period.label }}{% if due.finalised %} · <span class="badge ok">Filed</span>{% elif due.overdue %} · <span class="badge err">{{ -due.days_left }} day{{ 's' if due.days_left != -1 }} overdue</span>{% elif due.status != 'no_data' %} · <span class="badge {{ 'err' if due.days_left <= 5 else '' }}">{{ due.days_left }} day{{ 's' if due.days_left != 1 }} left</span>{% endif %}</div>
+  <p class="owe-headline">{{ due.headline }}</p>
+  {% if due.payable or due.refundable %}
+  <div class="owe-amounts">
+    {% for c, v in due.payable|dictsort %}<div><div class="label">To pay in {{ CURRENCY_NAMES.get(c, c) }}</div><div class="value">{{ v|money }}</div></div>{% endfor %}
+    {% for c, v in due.refundable|dictsort %}<div><div class="label">ZIMRA owes you in {{ CURRENCY_NAMES.get(c, c) }}</div><div class="value refund">{{ v|money }}</div></div>{% endfor %}
+    <div><div class="label">Due by</div><div class="value">{{ due.due_date.strftime('%d %b %Y') }}</div></div>
+  </div>
+  {% endif %}
+  {% for d in due.details %}<p class="small">{{ d }}</p>{% endfor %}
+  {% if due.attention and not due.finalised %}
+  <ul class="small owe-attention">{% for a in due.attention[:4] %}<li class="{{ a.severity }}">{{ a.title }}</li>{% endfor %}{% if due.attention|length > 4 %}<li>and {{ due.attention|length - 4 }} more</li>{% endif %}</ul>
+  {% endif %}
+  <div class="actions">
+    {% if due.status == 'no_data' %}<a class="button" href="/b/{{ business.id }}/uploads">Upload transactions</a>
+    {% elif due.attention and not due.finalised and due.attention|selectattr('code', 'equalto', 'needs_review')|list %}<a class="button" href="/b/{{ business.id }}/review">Answer a few questions</a>
+    {% elif due.attention and not due.finalised %}<a class="button" href="/b/{{ business.id }}/returns/{{ due.period.key }}">Sort these out</a>
+    {% else %}<a class="button" href="/b/{{ business.id }}/returns/{{ due.period.key }}">{{ 'View return' if due.finalised else 'Review and file' }}</a>{% endif %}
+  </div>
+</div>
+{% if summaries|length > 1 %}{% set run = summaries[1] %}
+<div class="card owe-running">
+  <strong>{{ run.headline }}</strong>
+  {% for d in run.details %}<div class="small muted">{{ d }}</div>{% endfor %}
+</div>
+{% endif %}
+
+<div class="cards" style="margin-top:1rem">
+  <div class="card stat">
+    <div class="label">Get started</div>
+    <div class="actions" style="margin-top:.4rem">
+      <a class="button" href="/b/{{ business.id }}/uploads">Upload transactions</a>
+      <a class="button secondary" href="/b/{{ business.id }}/returns/{{ deadline.period.key }}">Prepare return</a>
+    </div>
+  </div>
+</div>
+
+<h2>Tax periods</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Period</th><th>Due</th><th class="num">Transactions</th><th>Review</th><th>Return</th><th></th></tr></thead>
+  <tbody>
+  {% for row in periods %}
+    {% set p = row.period %}
+    <tr>
+      <td><a href="/b/{{ business.id }}/returns/{{ p.key }}">{{ p.label }}</a></td>
+      <td class="nowrap">{{ p.due_date|d }}</td>
+      <td class="num"><a href="/b/{{ business.id }}/transactions?period={{ p.key }}">{{ row.count }}</a></td>
+      <td>
+        {% if row.review %}<a class="badge warn" href="/b/{{ business.id }}/transactions?period={{ p.key }}&status=review">{{ row.review }} to review</a>
+        {% elif row.count %}<span class="badge ok">Reviewed</span>{% else %}<span class="muted">—</span>{% endif %}
+      </td>
+      <td>
+        {% if row.returned %}<span class="badge ok">Finalised {{ row.returned.finalised_at|d }}</span>
+        {% elif row.count == 0 %}<span class="badge">No data</span>
+        {% else %}<span class="badge info">Draft</span>{% endif %}
+      </td>
+      <td><a href="/b/{{ business.id }}/returns/{{ p.key }}">Open</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2>Recent uploads</h2>
+{% if uploads %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>File</th><th>Uploaded</th><th class="num">Imported</th><th class="num">Unreadable</th></tr></thead>
+  <tbody>
+  {% for u in uploads %}
+    <tr>
+      <td><a href="/b/{{ business.id }}/uploads/{{ u.id }}">{{ u.filename }}</a></td>
+      <td>{{ u.created_at|d }}</td>
+      <td class="num">{{ u.rows_imported }}</td>
+      <td class="num">{% if u.rows_failed %}<span class="badge err">{{ u.rows_failed }}</span>{% else %}0{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">Nothing uploaded yet.</p>
+{% endif %}
+
+<form method="post" action="/b/{{ business.id }}/reclassify" class="actions">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <button class="secondary small">Re-apply rules to unreviewed transactions</button>
+  <span class="small muted">Use after adding or changing classification rules.</span>
+</form>
+{% endblock %}

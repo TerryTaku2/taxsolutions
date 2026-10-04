@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="small"><a href="/b/{{ business.id }}/transactions?period={{ period.key }}">← Transactions for {{ period.label }}</a></p>
+<h2 style="margin-top:0">{{ t.description or 'Transaction' }}</h2>
+<div class="cards">
+  <div class="card">
+    <h3 style="margin-top:0">Transaction</h3>
+    <dl class="kv">
+      <dt>Date</dt><dd>{{ t.txn_date|d }}</dd>
+      <dt>Type</dt><dd>{{ DIRECTIONS[t.direction] }}</dd>
+      <dt>Amount</dt><dd>{{ t.amount|money }} {{ t.currency }} ({{ 'includes' if t.amount_includes_vat else 'excludes' }} VAT)</dd>
+      {% if t.stated_vat is not none %}<dt>VAT in file</dt><dd>{{ t.stated_vat|money }} {{ t.currency }}</dd>{% endif %}
+      <dt>Customer / supplier</dt><dd>{{ t.counterparty or '—' }}</dd>
+      <dt>Their VAT number</dt><dd>{{ t.counterparty_vat_number or '—' }}</dd>
+      <dt>Invoice number</dt><dd>{{ t.invoice_number or '—' }}</dd>
+      {% if t.reference %}<dt>Reference</dt><dd>{{ t.reference }}</dd>{% endif %}
+      <dt>Source</dt><dd>{% if t.upload %}<a href="/b/{{ business.id }}/uploads/{{ t.upload_id }}">{{ t.upload.filename }}</a>, row {{ t.row_number }}{% else %}Entered by hand{% endif %}</dd>
+      {% if t.excluded %}<dt>Status</dt><dd><span class="badge warn">Excluded from the return</span></dd>{% endif %}
+    </dl>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Classification</h3>
+    <dl class="kv">
+      <dt>VAT category</dt><dd>{{ VAT_CATEGORIES[t.vat_category] }}</dd>
+      {% if t.direction == 'purchase' %}<dt>Input tax</dt><dd>{{ INPUT_TYPES[t.input_type] }}</dd>{% endif %}
+      <dt>Why</dt><dd>{{ t.classification_reason or '' }}</dd>
+      {% if rule %}<dt>Rule</dt><dd><code>{{ rule.pattern }}</code></dd>{% endif %}
+      {% if ref_item %}<dt>Reference list</dt><dd>{{ ref_item.item }} · {{ ref_item.citation }}{% if ref_item.note %}<div class="muted small">{{ ref_item.note }}</div>{% endif %}</dd>{% endif %}
+      <dt>Confidence</dt><dd>{{ '%.0f' % (t.confidence * 100) }}%{% if t.reviewed %} · reviewed{% endif %}</dd>
+    </dl>
+    <p class="small"><a href="/settings/rules?business={{ business.id }}&pattern={{ (t.counterparty or t.description)|urlencode }}&category={{ t.vat_category }}&direction={{ t.direction }}">Make a rule for similar transactions</a></p>
+  </div>
+  {% if calc %}
+  <div class="card">
+    <h3 style="margin-top:0">Calculation</h3>
+    {% if calc.error %}<div class="issue error">{{ calc.error }}</div>{% else %}
+    <dl class="kv">
+      <dt>VAT rate</dt><dd>{{ calc.rate|pct if calc.rate is not none else 'n/a' }}</dd>
+      <dt>Net</dt><dd>{{ calc.net|money }} {{ t.currency }}</dd>
+      <dt>VAT</dt><dd>{{ calc.vat|money }} {{ t.currency }}</dd>
+      {% if t.currency != business.reporting_currency %}
+      <dt>Exchange rate</dt><dd>{{ '%.6f'|format(calc.fx_rate) }} {{ business.reporting_currency }} per {{ t.currency }}, {{ calc.fx_date|d }}{% if calc.fx_source %} ({{ calc.fx_source }}){% endif %}</dd>
+      <dt>Net ({{ business.reporting_currency }})</dt><dd>{{ calc.net_rep|money }}</dd>
+      <dt>VAT ({{ business.reporting_currency }})</dt><dd>{{ calc.vat_rep|money }}</dd>
+      {% endif %}
+      <dt>Return lines</dt><dd>{% for code in lines %}<a href="/b/{{ business.id }}/returns/{{ period.key }}/lines/{{ code }}">{{ LINE_LABELS[code] }}</a>{% if not loop.last %}<br>{% endif %}{% else %}None{% endfor %}</dd>
+    </dl>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if t.raw %}
+<h3>Original row</h3>
+<div class="table-wrap"><table><tbody>
+  {% for k, v in t.raw.items() %}<tr><th style="width:30%">{{ k }}</th><td>{{ v }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% endif %}
+
+<h3>History</h3>
+{% if history %}
+<div class="table-wrap"><table>
+  <thead><tr><th>When</th><th>Who</th><th>Change</th></tr></thead>
+  <tbody>{% for h in history %}
+    <tr><td class="nowrap">{{ h.at.strftime('%d %b %Y %H:%M') }}</td><td>{{ h.user.name if h.user else 'System' }}</td>
+      <td class="small">{{ h.action }}{% if h.detail %}: {% for k, v in h.detail.items() %}{{ k }} {{ v }}{% if not loop.last %}; {% endif %}{% endfor %}{% endif %}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">Not changed since import.</p>{% endif %}
+{% endblock %}

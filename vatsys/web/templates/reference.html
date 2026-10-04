@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Reference lists</h1>
+<p class="muted">Goods and services whose VAT treatment a document sets, such as the zero-rated and exempt schedules of the VAT (General) Regulations (SI 273 of 2003). Each transaction's description is matched against these items, so "2 packets of sugar" is classified by what the loaded list says about sugar, with the document cited as the reason. Rules set up for a business run first; rules for all businesses run after the lists. Descriptions that match nothing are assumed standard-rated and flagged for review.</p>
+
+<div class="card">
+  <h3 style="margin-top:0">Try a description</h3>
+  <form method="get" action="/settings/reference" class="form-grid">
+    <div class="wide"><label for="test">Transaction description</label><input id="test" name="test" value="{{ tested.text if tested }}" placeholder="e.g. 2 packets of sugar"></div>
+    <div><label for="test_date">Date</label><input id="test_date" name="test_date" type="date" value="{{ test_date }}"></div>
+    <div style="align-self:end"><button>Classify</button></div>
+  </form>
+  {% if tested %}{% set c = tested.result %}
+  <div class="issue {{ 'warning' if c.source == 'default' else 'info' }}" style="margin-top:.8rem">
+    <strong>{{ VAT_CATEGORIES[c.vat_category] }}</strong> on {{ tested.on|d }}
+    · <span class="small">{{ {'reference': 'from a reference list', 'rule': 'from a classification rule', 'default': 'nothing matched; would be flagged for review'}[c.source] }}</span>
+    <div class="detail">{{ c.reason }}</div>
+  </div>
+  {% endif %}
+</div>
+
+{% if user.is_admin %}
+<form method="post" action="/settings/reference/import" enctype="multipart/form-data" class="card" style="margin-top:1rem">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <h3 style="margin-top:0">Import a list</h3>
+  <p class="small">A CSV or Excel file with one row per item: Item, Keywords, VAT category, Exclude words, Source document, Reference, From, To, Note. <a href="/settings/reference/template.xlsx">Download the template</a>. Copy each item's treatment from the document; the file is checked and nothing is imported if any row is invalid.</p>
+  <div class="form-grid">
+    <div><label for="file">File</label><input id="file" name="file" type="file" accept=".csv,.xlsx" required></div>
+    <div class="wide"><label for="default_source">Source document, for rows that leave it empty</label><input id="default_source" name="default_source" placeholder="e.g. SI 273 of 2003, Second Schedule"></div>
+    <div><label><input type="checkbox" name="replace_source" value="yes" checked> Replace items already loaded from the same source</label></div>
+  </div>
+  <div class="actions"><button>Import</button></div>
+</form>
+{% endif %}
+
+<h2>Items</h2>
+{% if sources %}
+<p class="small">{% for src, n in sources %}<a href="/settings/reference?source={{ src|urlencode }}">{{ src }}</a> ({{ n }}){{ ' · ' if not loop.last }}{% endfor %}{% if source %} · <a href="/settings/reference">All</a>{% endif %}</p>
+<form method="get" action="/settings/reference" class="actions">
+  {% if source %}<input type="hidden" name="source" value="{{ source }}">{% endif %}
+  <input name="q" value="{{ q }}" placeholder="Search items or keywords"><button class="secondary">Search</button>
+</form>
+<div class="table-wrap"><table>
+  <thead><tr><th>Item</th><th>Keywords</th><th>Category</th><th>Source</th><th>In force</th><th></th></tr></thead>
+  <tbody>{% for i in items %}
+    <tr style="{{ 'opacity:.5' if not i.active }}">
+      <td>{{ i.item }}{% if i.note %}<div class="muted small">{{ i.note }}</div>{% endif %}</td>
+      <td class="small">{{ i.keywords }}{% if i.excludes %}<div class="muted">not: {{ i.excludes }}</div>{% endif %}</td>
+      <td>{{ VAT_CATEGORIES[i.vat_category] }}</td>
+      <td class="small">{{ i.citation }}</td>
+      <td class="small nowrap">{% if i.effective_from or i.effective_to %}{{ i.effective_from|d if i.effective_from else 'Any date' }} – {{ i.effective_to|d if i.effective_to else 'onwards' }}{% else %}Always{% endif %}</td>
+      <td class="nowrap">{% if user.is_admin %}
+        <form class="inline" method="post" action="/settings/reference/{{ i.id }}/toggle"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link small">{{ 'Disable' if i.active else 'Enable' }}</button></form>
+        · <form class="inline" method="post" action="/settings/reference/{{ i.id }}/delete" onsubmit="return confirm('Delete this item?')"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link small">Delete</button></form>
+      {% endif %}</td>
+    </tr>
+  {% else %}<tr><td colspan="6" class="muted">No items match.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}
+<p class="muted">No lists loaded yet. {% if user.is_admin %}Import the schedules of zero-rated and exempt goods from the VAT (General) Regulations to start.{% else %}Ask an administrator to load them.{% endif %}</p>
+{% endif %}
+{% endblock %}

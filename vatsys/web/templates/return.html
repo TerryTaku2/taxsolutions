@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+{% set rc = result.reporting_currency %}
+{% set errors = issues|selectattr('severity', 'equalto', 'error')|list %}
+<div class="page-head">
+  <div>
+    <h2 style="margin-top:0">VAT return · {{ period.label }}</h2>
+    <div class="muted small">{{ period.start|d }} to {{ period.end|d }} · due {{ period.due_date.strftime('%A %d %B %Y') }}
+      {% set days = (period.due_date - today).days %}
+      {% if not saved %}· {% if days < 0 %}<span class="badge err">{{ -days }} days overdue</span>{% else %}{{ days }} days left{% endif %}{% endif %}</div>
+  </div>
+  <div class="actions" style="margin-top:0">
+    <a class="button secondary" href="/b/{{ business.id }}/returns/{{ period.key }}/export.xlsx">Download Excel schedules</a>
+    <a class="button secondary" href="/b/{{ business.id }}/returns/{{ period.key }}/export.csv">CSV</a>
+  </div>
+</div>
+
+{% if saved %}
+<div class="flash success" style="margin-top:1rem">Finalised on {{ saved.finalised_at|d }}. Transactions in this period are locked.</div>
+{% if drift %}<div class="flash error">These figures no longer match what was finalised ({{ drift|join(', ') }}). A VAT rate or exchange rate used by this period has been changed since. Reopen and finalise again, or restore the rate.</div>{% endif %}
+{% endif %}
+
+<h3>Checks before filing</h3>
+{% for i in issues %}
+  <div class="issue {{ i.severity }}">
+    <strong>{{ i.title }}</strong>
+    {% if i.txn_ids %} · <a href="/b/{{ business.id }}/transactions?period={{ period.key }}&ids={{ i.txn_ids[:300]|join(',') }}">View</a>{% endif %}
+    {% if i.code == 'needs_review' %} · <a href="/b/{{ business.id }}/review">Answer questions</a>{% endif %}
+    {% if i.detail %}<div class="detail">{{ i.detail }}</div>{% endif %}
+  </div>
+{% else %}
+  <div class="issue info">No problems found.</div>
+{% endfor %}
+
+<h3>Computation</h3>
+{% macro row(code, cls='') %}
+  {% set line = result.lines[code] %}
+  <tr class="{{ cls }}">
+    <td>{{ line.label }}</td>
+    {% for c in result.currencies %}<td class="num">{{ line.by_currency[c]|money }}</td>{% endfor %}
+    <td class="num"><a href="/b/{{ business.id }}/returns/{{ period.key }}/lines/{{ code }}" title="Show the transactions behind this figure">{{ line.total|money }}</a></td>
+  </tr>
+{% endmacro %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Line</th>{% for c in result.currencies %}<th class="num">{{ c }}</th>{% endfor %}<th class="num">Total in {{ rc }}</th></tr></thead>
+  <tbody>
+    <tr class="section"><td colspan="{{ result.currencies|length + 2 }}">Supplies</td></tr>
+    {{ row('SR_SUPPLIES') }}{{ row('ZR_SUPPLIES') }}{{ row('EX_SUPPLIES') }}{{ row('TOTAL_SUPPLIES', 'total') }}
+    <tr class="section"><td colspan="{{ result.currencies|length + 2 }}">Output tax</td></tr>
+    {{ row('OUTPUT_TAX') }}{{ row('IMPORTED_SERVICES_TAX') }}{{ row('TOTAL_OUTPUT', 'total') }}
+    <tr class="section"><td colspan="{{ result.currencies|length + 2 }}">Input tax</td></tr>
+    {{ row('INPUT_CAPITAL') }}{{ row('INPUT_IMPORTS') }}{{ row('INPUT_OTHER') }}{{ row('TOTAL_INPUT', 'total') }}
+    {{ row('NET_VAT', 'net') }}
+  </tbody>
+</table>
+</div>
+{% set nets = result.net_by_currency() %}
+<p>{% for c, v in nets.items() %}<strong>{% if v > 0 %}{{ v|money }} {{ c }} payable{% else %}{{ (-v)|money }} {{ c }} refundable{% endif %}</strong>{{ ' · ' if not loop.last }}{% else %}Nil return{% endfor %}
+  <br><span class="muted small">VAT is settled separately in each currency; one currency cannot be set off against another (s38(4)). The total column converts each transaction at the rate for its date, for information.</span>
+  {% if result.taxable_share is not none and result.taxable_share < 1 %}<br><span class="muted small">Taxable supplies are {{ '%.1f'|format(result.taxable_share * 100) }}% of all supplies{% if result.claim_ratio < 1 %}; mixed-use input tax is claimed at that share{% else %}; mixed-use input tax is claimed in full{% endif %} (s16(1)).</span>{% endif %}</p>
+
+<details>
+  <summary>Supporting figures (not on the return)</summary>
+  <div class="table-wrap" style="margin-top:.5rem"><table><tbody>
+    {{ row('PURCHASES_STANDARD') }}{{ row('PURCHASES_NO_VAT') }}{{ row('NON_DEDUCTIBLE') }}{{ row('OUT_OF_SCOPE') }}
+  </tbody></table></div>
+</details>
+
+{% if result.fx_used %}
+<h3>Exchange rates used</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Conversion</th><th>Rate date</th><th class="num">Rate</th><th>Source</th><th class="num">Transactions</th></tr></thead>
+  <tbody>{% for f in result.fx_used %}
+    <tr><td>{{ f['from'] }} → {{ f['to'] }}</td><td>{{ f['date']|d }}</td><td class="num">{{ '%.6f'|format(f['rate']) }}</td><td>{{ f['source'] or '' }}</td><td class="num">{{ f['count'] }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+<h3>File</h3>
+{% if saved %}
+<form method="post" action="/b/{{ business.id }}/returns/{{ period.key }}/reopen" class="card">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label for="reason">Reason for reopening (kept in the audit log)</label>
+  <input id="reason" name="reason" required style="width:100%">
+  <div class="actions"><button class="danger">Reopen return</button></div>
+</form>
+{% else %}
+<form method="post" action="/b/{{ business.id }}/returns/{{ period.key }}/finalise" class="card"
+      onsubmit="return confirm('Finalise this return? Its transactions will be locked.')">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <p class="small">Finalising records these figures and locks the period's transactions. Then enter the figures in ZIMRA TaRMS, or attach the Excel schedules.</p>
+  <button {{ 'disabled' if errors }}>Finalise return</button>
+  {% if errors %}<span class="small muted">Fix the errors above first.</span>{% endif %}
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+{% if not business %}<h1>Classification rules</h1>{% endif %}
+<p class="muted">Rules decide each transaction's VAT category when the file doesn't say. Rules for one business run before rules for all businesses; within each group, lower priority numbers run first. The first match in force on the transaction's date wins. Transactions no rule matches are assumed standard-rated and flagged for review.</p>
+
+{% if business or user.is_admin %}
+<form method="post" action="/settings/rules" class="card">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="business_id" value="{{ business.id if business }}">
+  <h3 style="margin-top:0">Add a rule {{ 'for ' ~ business.name if business else 'for all businesses' }}</h3>
+  <div class="form-grid">
+    <div class="wide"><label for="pattern">Text to look for</label><input id="pattern" name="pattern" required value="{{ prefill.pattern }}"></div>
+    <div><label for="match_type">Match</label><select id="match_type" name="match_type">
+      <option value="contains">Contains</option><option value="equals">Equals exactly</option><option value="regex">Regular expression</option></select></div>
+    <div><label for="field">Look in</label><select id="field" name="field">
+      <option value="any">Description or customer/supplier</option><option value="description">Description</option><option value="counterparty">Customer/supplier</option></select></div>
+    <div><label for="direction">Applies to</label><select id="direction" name="direction">
+      {% for k, v in [('any', 'Sales and purchases'), ('sale', 'Sales only'), ('purchase', 'Purchases only')] %}<option value="{{ k }}" {{ 'selected' if prefill.direction == k }}>{{ v }}</option>{% endfor %}</select></div>
+    <div><label for="vat_category">VAT category</label><select id="vat_category" name="vat_category">
+      {% for k, v in VAT_CATEGORIES.items() %}<option value="{{ k }}" {{ 'selected' if prefill.category == k }}>{{ v }}</option>{% endfor %}</select></div>
+    <div><label for="input_type">Input tax type (purchases)</label><select id="input_type" name="input_type"><option value="">Other goods & services</option>
+      {% for k, v in INPUT_TYPES.items() if k != 'general' %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+    <div><label for="effective_from">In force from (optional)</label><input id="effective_from" name="effective_from" type="date"></div>
+    <div><label for="effective_to">In force until (optional)</label><input id="effective_to" name="effective_to" type="date"></div>
+    <div><label for="priority">Priority</label><input id="priority" name="priority" type="number" value="100"></div>
+    <div class="wide"><label for="note">Note (shown as the reason)</label><input id="note" name="note"></div>
+  </div>
+  <div class="actions"><button>Add rule</button></div>
+</form>
+{% endif %}
+
+<h2>Rules</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Scope</th><th class="num">Priority</th><th>Match</th><th>Applies to</th><th>Category</th><th>In force</th><th>Note</th><th></th></tr></thead>
+  <tbody>{% for r in rules %}
+    <tr style="{{ 'opacity:.5' if not r.active }}">
+      <td>{{ 'This business' if r.business_id else 'All businesses' }}</td>
+      <td class="num">{{ r.priority }}</td>
+      <td><span class="muted small">{{ r.match_type }} in {{ r.field }}</span><br><code>{{ r.pattern }}</code></td>
+      <td>{{ {'any': 'All', 'sale': 'Sales', 'purchase': 'Purchases'}[r.direction] }}</td>
+      <td>{{ VAT_CATEGORIES[r.vat_category] }}{% if r.input_type and r.input_type != 'general' %}<div class="muted small">{{ INPUT_TYPES[r.input_type] }}</div>{% endif %}</td>
+      <td class="small nowrap">{% if r.effective_from or r.effective_to %}{{ r.effective_from|d if r.effective_from else 'Any date' }} – {{ r.effective_to|d if r.effective_to else 'onwards' }}{% else %}Always{% endif %}</td>
+      <td class="small">{{ r.note or '' }}</td>
+      <td class="nowrap">
+        {% if r.business_id or user.is_admin %}
+        <form class="inline" method="post" action="/settings/rules/{{ r.id }}/toggle"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link small">{{ 'Disable' if r.active else 'Enable' }}</button></form>
+        · <form class="inline" method="post" action="/settings/rules/{{ r.id }}/delete" onsubmit="return confirm('Delete this rule?')"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link small">Delete</button></form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endblock %}

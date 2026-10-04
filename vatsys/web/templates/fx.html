@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Exchange rates</h1>
+<p class="muted">ZiG (ZWG) per 1 US dollar. A transaction uses the latest rate on or before its date, and the return shows which rate and date were used. Enter the official rate you are required to use (normally the RBZ interbank mid-rate).</p>
+
+{% if user.is_admin %}
+<div class="cards">
+  <form method="post" action="/settings/fx" class="card">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <h3 style="margin-top:0">Add one rate</h3>
+    <div class="form-grid">
+      <div><label for="rate_date">Date</label><input id="rate_date" name="rate_date" type="date" required></div>
+      <div><label for="rate">ZWG per USD</label><input id="rate" name="rate" required inputmode="decimal"></div>
+      <div><label for="source">Source</label><input id="source" name="source" value="RBZ interbank"></div>
+    </div>
+    <div class="actions"><button>Save rate</button></div>
+  </form>
+  <form method="post" action="/settings/fx/import" enctype="multipart/form-data" class="card">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <h3 style="margin-top:0">Import from CSV</h3>
+    <p class="small muted">Columns: <code>Date, Rate</code>, optionally <code>Base, Quote, Source</code>. Existing dates are overwritten.</p>
+    <input type="file" name="file" accept=".csv" required aria-label="Rates CSV">
+    <div class="actions"><button>Import</button></div>
+  </form>
+</div>
+{% endif %}
+
+<h2>Rates</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Date</th><th>Pair</th><th class="num">Rate</th><th>Source</th><th></th></tr></thead>
+  <tbody>{% for r in rates %}
+    <tr><td>{{ r.rate_date|d }}</td><td>{{ r.base }}/{{ r.quote }}</td><td class="num">{{ '%.4f'|format(r.rate) }}</td><td>{{ r.source or '' }}</td>
+      <td>{% if user.is_admin %}<form class="inline" method="post" action="/settings/fx/{{ r.id }}/delete"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link small">Delete</button></form>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">No exchange rates yet. ZiG transactions can't be converted until rates are added.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% if rates|length == 400 %}<p class="small muted">Showing the latest 400.</p>{% endif %}
+{% endblock %}

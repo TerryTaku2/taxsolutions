@@ -1,0 +1,6 @@
+Date,Transaction ID,Type,Details,Amount,Currency,Balance
+2026-08-03 09:15:22,MP260803.0915.A1,Merchant Payment,Payment from T. Moyo - parcel delivery,45.00,USD,245.00
+2026-08-07 14:02:10,MP260807.1402.B2,Merchant Payment,Payment from Chiedza Stores - delivery,120.00,USD,365.00
+2026-08-11 11:30:00,BP260811.1130.C3,Bill Payment,ZESA prepaid electricity depot,-80.50,USD,284.50
+2026-08-19 16:45:51,SM260819.1645.D4,Send Money,Transfer to own account,-200.00,USD,84.50
+2026-08-22 08:05:12,MP260822.0805.E5,Merchant Payment,Payment from R. Ncube - courier,2300.00,ZWG,2300.00

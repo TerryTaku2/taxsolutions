@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="get" class="filters">
+  <div><label for="f-period">Period start</label>
+    <input id="f-period" name="period" placeholder="YYYY-MM-01" value="{{ filters.period }}" size="11"></div>
+  <div><label for="f-direction">Direction</label>
+    <select id="f-direction" name="direction"><option value="">All</option>
+      {% for k, v in DIRECTIONS.items() %}<option value="{{ k }}" {{ 'selected' if filters.direction == k }}>{{ v }}</option>{% endfor %}</select></div>
+  <div><label for="f-category">VAT category</label>
+    <select id="f-category" name="category"><option value="">All</option>
+      {% for k, v in VAT_CATEGORIES.items() %}<option value="{{ k }}" {{ 'selected' if filters.category == k }}>{{ v }}</option>{% endfor %}</select></div>
+  <div><label for="f-status">Show</label>
+    <select id="f-status" name="status">
+      <option value="">Everything</option>
+      <option value="review" {{ 'selected' if filters.status == 'review' }}>Needs review</option>
+      <option value="excluded" {{ 'selected' if filters.status == 'excluded' }}>Excluded</option>
+    </select></div>
+  <div><label for="f-q">Search</label><input id="f-q" name="q" value="{{ filters.q }}" placeholder="Description, party, invoice"></div>
+  <input type="hidden" name="upload" value="{{ filters.upload }}">
+  <input type="hidden" name="ids" value="{{ filters.ids }}">
+  <div><button class="secondary">Filter</button> <a class="small" href="/b/{{ business.id }}/transactions">Clear</a></div>
+</form>
+{% if filters.ids %}<div class="flash info">Showing the transactions behind a check. <a href="/b/{{ business.id }}/transactions?period={{ filters.period }}">Show all in period</a></div>{% endif %}
+{% if period_obj %}<p class="small">Period {{ period_obj.label }} · <a href="/b/{{ business.id }}/returns/{{ period_obj.key }}">Open its return</a></p>{% endif %}
+
+<form method="post" action="/b/{{ business.id }}/transactions/save">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="return_to" value="{{ request.url.path }}?{{ request.url.query }}">
+  <div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th><input type="checkbox" aria-label="Select all" onclick="document.querySelectorAll('input[name=selected]:not(:disabled)').forEach(c => c.checked = this.checked)"></th>
+      <th>Date</th><th>Description</th><th>Type</th><th class="num">Amount</th><th>VAT category</th><th>Input tax</th><th>Basis</th><th>Exclude</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for t in txns %}
+      {% set locked = t.id in locked_ids %}
+      <tr>
+        <td><input type="hidden" name="row_id" value="{{ t.id }}">
+          <input type="checkbox" name="selected" value="{{ t.id }}" aria-label="Select" {{ 'disabled' if locked }}></td>
+        <td class="nowrap">{{ t.txn_date|d }}</td>
+        <td>{{ t.description }}
+          <div class="muted small">{{ t.counterparty or '' }}{% if t.invoice_number %} · {{ t.invoice_number }}{% endif %}</div></td>
+        <td>{{ 'Sale' if t.direction == 'sale' else 'Purchase' }}</td>
+        <td class="num">{{ t.amount|money }} <span class="muted small">{{ t.currency }}</span></td>
+        <td><select name="cat_{{ t.id }}" aria-label="VAT category" {{ 'disabled' if locked }}>
+          {% for k, v in VAT_CATEGORIES.items() %}<option value="{{ k }}" {{ 'selected' if t.vat_category == k }}>{{ v }}</option>{% endfor %}</select></td>
+        <td>{% if t.direction == 'purchase' %}<select name="input_{{ t.id }}" aria-label="Input tax type" {{ 'disabled' if locked }}>
+          {% for k, v in INPUT_TYPES.items() %}<option value="{{ k }}" {{ 'selected' if t.input_type == k }}>{{ v }}</option>{% endfor %}</select>
+          {% else %}<span class="muted">—</span>{% endif %}</td>
+        <td>
+          {% if locked %}<span class="badge">Locked</span>
+          {% elif t.classification_source == 'user' %}<span class="badge ok">You</span>
+          {% elif t.reviewed %}<span class="badge ok">Reviewed</span>
+          {% elif t.confidence < threshold %}<span class="badge warn" title="{{ t.classification_reason }}">Check</span>
+          {% else %}<span class="badge info" title="{{ t.classification_reason }}">{{ {'file': 'File', 'reference': 'List'}.get(t.classification_source, 'Rule') }}</span>{% endif %}
+        </td>
+        <td><input type="checkbox" name="excl_{{ t.id }}" value="1" aria-label="Exclude" {{ 'checked' if t.excluded }} {{ 'disabled' if locked }}></td>
+        <td class="nowrap small"><a href="/b/{{ business.id }}/transactions/{{ t.id }}">Details</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="10" class="muted">No transactions match.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if page > 1 or more %}<p class="small">Page {{ page }}
+    {% if page > 1 %}· <a href="?{{ query_without_page }}&page={{ page - 1 }}">Previous</a>{% endif %}
+    {% if more %}· <a href="?{{ query_without_page }}&page={{ page + 1 }}">Next</a>{% endif %}</p>{% endif %}
+  {% if txns %}
+  <div class="sticky-bar">
+    <span class="small">For selected rows:</span>
+    <select name="bulk_category" aria-label="Set category for selected"><option value="">VAT category…</option>
+      {% for k, v in VAT_CATEGORIES.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+    <select name="bulk_input_type" aria-label="Set input tax type for selected"><option value="">Input tax type…</option>
+      {% for k, v in INPUT_TYPES.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+    <button name="action" value="save">Save changes</button>
+    <button name="action" value="save_review" class="secondary" title="Marks the selected rows, or every row shown if none is selected">Save and mark reviewed</button>
+  </div>
+  {% endif %}
+</form>
+
+<details style="margin-top:1.5rem">
+  <summary>Add a transaction by hand</summary>
+  <form method="post" action="/b/{{ business.id }}/transactions/new" class="card" style="margin-top:.75rem">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="form-grid">
+      <div><label for="n-date">Date</label><input id="n-date" name="txn_date" type="date" required></div>
+      <div><label for="n-dir">Type</label><select id="n-dir" name="direction">{% for k, v in DIRECTIONS.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+      <div class="wide"><label for="n-desc">Description</label><input id="n-desc" name="description" required></div>
+      <div><label for="n-party">Customer / supplier</label><input id="n-party" name="counterparty"></div>
+      <div><label for="n-vatno">Their VAT number</label><input id="n-vatno" name="counterparty_vat_number"></div>
+      <div><label for="n-inv">Invoice number</label><input id="n-inv" name="invoice_number"></div>
+      <div><label for="n-amt">Amount</label><input id="n-amt" name="amount" required inputmode="decimal"></div>
+      <div><label for="n-ccy">Currency</label><select id="n-ccy" name="currency">{% for c in CURRENCIES %}<option>{{ c }}</option>{% endfor %}</select></div>
+      <div><label for="n-incl">Amount</label><select id="n-incl" name="amount_includes_vat"><option value="yes">Includes VAT</option><option value="no">Excludes VAT</option></select></div>
+    </div>
+    <div class="actions"><button>Add</button></div>
+  </form>
+</details>
+{% endblock %}

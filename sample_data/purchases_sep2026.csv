@@ -1,0 +1,11 @@
+Date,Tax Invoice No,Supplier,Supplier VAT No,Description,Currency,Total,VAT
+03/09/2026,FUEL-5531,Zuva Fuels Depot,20011111,Diesel 2000 litres,USD,"3,000.00",
+05/09/2026,T-8812,Tyre World,20022222,Truck tyres x6,USD,"1,848.00",248.00
+09/09/2026,AUTO-77,Heavy Trucks Zimbabwe,20033333,Truck purchase - Volvo FH horse,USD,"92,400.00","12,400.00"
+10/09/2026,BE-2026-118,ZIMRA Customs,,Import VAT bill of entry - spare parts,USD,"1,550.00","1,550.00"
+12/09/2026,R-441,Meikles Restaurant,20044444,Client entertainment,USD,231.00,31.00
+16/09/2026,SRV-902,Fleet Service Centre,20055555,Truck service and parts,ZWG,"15,400.00","2,066.67"
+19/09/2026,,City Hardware,,Workshop consumables,USD,115.50,
+23/09/2026,TEL-0923,Econet Wireless,20066666,Airtime and data bundles,USD,57.75,7.75
+26/09/2026,INS-3310,Old Mutual Insurance,20077777,Goods in transit insurance,USD,462.00,62.00
+30/09/2026,RENT-09,Workington Properties,20088888,Depot rent September,USD,"1,155.00",155.00

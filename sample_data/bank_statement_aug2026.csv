@@ -1,0 +1,16 @@
+CBZ Bank Limited - Account Statement
+Account: 01234567890 USD
+
+Transaction Date,Value Date,Description,Debit,Credit,Balance
+01-Aug-2026,01-Aug-2026,Balance b/f,,,"12,500.00"
+04-Aug-2026,04-Aug-2026,RTGS IN Greenfield Millers freight,,"2,310.00","14,810.00"
+06-Aug-2026,06-Aug-2026,POS Zuva Fuels diesel,"1,500.00",,"13,310.00"
+08-Aug-2026,08-Aug-2026,Monthly bank charges,25.00,,"13,285.00"
+08-Aug-2026,08-Aug-2026,IMTT 2% tax,0.50,,"13,284.50"
+12-Aug-2026,12-Aug-2026,RTGS IN Lusaka Copper cross-border freight,,"4,800.00","18,084.50"
+15-Aug-2026,15-Aug-2026,Salaries August,"6,200.00",,"11,884.50"
+20-Aug-2026,20-Aug-2026,NSSA contributions,310.00,,"11,574.50"
+25-Aug-2026,25-Aug-2026,ZIMRA VAT payment July,"1,120.00",,"10,454.50"
+28-Aug-2026,28-Aug-2026,Tyre World tyres,924.00,,"9,530.50"
+31-Aug-2026,31-Aug-2026,Interest earned,,4.20,"9,534.70"
+31-Aug-2026,31-Aug-2026,Closing balance,,,"9,534.70"
