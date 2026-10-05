@@ -1,5 +1,6 @@
 from sqlalchemy import select
 
+from tests.conftest import csrf_from
 from vatsys.demo import EMAIL, load_demo
 from vatsys.models import Transaction, User
 
@@ -18,3 +19,16 @@ def test_public_demo_account_is_not_admin(db, tmp_path, monkeypatch):
     load_demo(db, tmp_path)
     with db.session() as s:
         assert not s.scalar(select(User).where(User.email == EMAIL)).is_admin
+
+
+def test_landing_page_offers_the_public_demo_only(db, tmp_path, client):
+    load_demo(db, tmp_path)  # the first account: an administrator, so its sign-in is never offered
+    assert "Try the demo" not in client.get("/").text
+
+    with db.session() as s:
+        s.scalar(select(User).where(User.email == EMAIL)).is_admin = False
+        s.commit()
+    r = client.get("/")
+    assert "Try the demo" in r.text
+    r = client.post("/login", data={"csrf": csrf_from(r.text), "email": EMAIL, "password": "demo-password-123"})
+    assert "Sample Haulage" in r.text  # one click signs in to the demo business

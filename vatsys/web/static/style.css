@@ -121,9 +121,42 @@ code { font-size: .85rem; background: var(--bg); padding: .05rem .3rem; border-r
   dl.kv dt { margin-top: .4rem; }
 }
 
+/* Landing page for signed-out visitors */
+.header-signin { margin-left: auto; }
+.hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 2.5rem; align-items: center; padding: 2rem 0 1rem; }
+.hero h1 { font-size: 2.3rem; line-height: 1.15; margin-bottom: .9rem; text-wrap: balance; }
+.eyebrow { color: var(--accent); font-weight: 600; font-size: .85rem; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 .6rem; }
+.lead { font-size: 1.1rem; color: var(--muted); margin: 0 0 .5rem; max-width: 38rem; }
+.hero .actions { margin: 1.25rem 0 .75rem; }
+.hero-example { box-shadow: 0 10px 30px rgba(0,0,0,.08); }
+.checklist { list-style: none; margin: .4rem 0 0; padding: 0; }
+.checklist li { padding: .3rem 0 .3rem 1.6rem; position: relative; }
+.checklist li::before { position: absolute; left: 0; font-weight: 700; }
+.checklist li.ok::before { content: "✓"; color: var(--success); }
+.checklist li.warn::before { content: "!"; color: var(--warning); left: .3rem; }
+.steps { list-style: none; padding: 0; margin: 0; counter-reset: step;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.steps li { counter-increment: step; }
+.steps li::before { content: counter(step); display: inline-flex; align-items: center; justify-content: center;
+  width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.steps h3, .features h3 { margin: .6rem 0 .3rem; }
+.steps p, .features p { margin: 0; color: var(--muted); }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem 2rem; }
+.features > div { border-top: 2px solid var(--accent-soft); padding-top: .4rem; }
+.note { margin-top: 2.5rem; }
+.note h2 { margin-top: 0; font-size: 1.05rem; }
+.note ul { margin: 0; padding-left: 1.2rem; }
+.note li + li { margin-top: .3rem; }
+.cta { text-align: center; padding: 2rem 0 0; }
+.cta .actions { justify-content: center; }
+.site-footer { border-top: 1px solid var(--border); margin-top: 3rem; padding-top: 1rem; text-align: center; }
+
 /* Phones and small tablets */
 @media (max-width: 760px) {
   main { padding-top: 1rem; }
+  .hero { grid-template-columns: 1fr; gap: 1.5rem; padding-top: .5rem; }
+  .hero h1 { font-size: 1.75rem; }
+  .lead { font-size: 1rem; }
   /* Header: links fold behind the Menu button (only when JavaScript can open it again) */
   .js .menu-toggle { display: inline-block; margin-left: auto; }
   .js header.top:not(.open) .menu { display: none; }

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}T-Tech VAT · VAT returns for Zimbabwean businesses{% endblock %}
+{% block content %}
+{% macro demo_button(label) %}
+<form class="inline" method="post" action="/login">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="email" value="{{ demo_login[0] }}">
+  <input type="hidden" name="password" value="{{ demo_login[1] }}">
+  <button>{{ label }}</button>
+</form>
+{% endmacro %}
+
+<section class="hero">
+  <div>
+    <p class="eyebrow">For VAT-registered businesses in Zimbabwe</p>
+    <h1>Your VAT return, worked out from the files you already keep</h1>
+    <p class="lead">Upload your sales and purchase lists, bank statements and EcoCash exports. The system sorts each
+      transaction under the VAT Act, works out what you owe in each currency, and produces return-ready schedules.
+      Every figure traces back to the row it came from.</p>
+    <div class="actions">
+      {% if demo_login %}{{ demo_button('Try the demo') }}<a class="button secondary" href="/login">Sign in</a>
+      {% else %}<a class="button" href="/login">Sign in</a><a class="button secondary" href="/register">Create an account</a>{% endif %}
+    </div>
+    {% if demo_login %}<p class="small muted">The demo is a sample transport company with two months of transactions.
+      Changes you make are wiped when the demo restarts.</p>{% endif %}
+  </div>
+
+  <div class="card owe warning hero-example" aria-label="Example of a return summary">
+    <div class="owe-label">Example · VAT return for September 2026 · <span class="badge">20 days left</span></div>
+    <p class="owe-headline">You will pay about US$1,284.50 and ZiG 3,616.66 to ZIMRA by 25 October 2026.</p>
+    <div class="owe-amounts">
+      <div><div class="label">To pay in US dollars</div><div class="value">1,284.50</div></div>
+      <div><div class="label">To pay in ZiG</div><div class="value">3,616.66</div></div>
+    </div>
+    <ul class="checklist small">
+      <li class="ok">46 transactions read from 4 files</li>
+      <li class="ok">Exchange rates found for every ZiG transaction</li>
+      <li class="warn">3 transactions need your answer before filing</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li class="card">
+      <h3>Upload</h3>
+      <p>Excel or CSV sales and purchase lists, bank statements, and EcoCash, OneMoney or InnBucks exports. It finds
+        the columns itself, and lists any row it couldn't read, with the reason.</p>
+    </li>
+    <li class="card">
+      <h3>Classify</h3>
+      <p>Each transaction is sorted as standard-rated, zero-rated, exempt or out of scope, using your own rules and the
+        schedules in the VAT regulations. When it isn't sure, it asks rather than guesses.</p>
+    </li>
+    <li class="card">
+      <h3>Review</h3>
+      <p>Answer plain questions about the transactions it flagged. Checks before filing catch missing invoice numbers,
+        missing exchange rates and invoices claimed twice.</p>
+    </li>
+    <li class="card">
+      <h3>File</h3>
+      <p>Download the return and its schedules as Excel and enter the figures in TaRMS. Finalising locks the period, so
+        the figures you filed can't change without a record.</p>
+    </li>
+  </ol>
+</section>
+
+<section>
+  <h2>Built for Zimbabwean VAT</h2>
+  <div class="features">
+    <div>
+      <h3>US dollars and ZiG kept apart</h3>
+      <p>VAT is worked out separately for each currency, because one can't be set off against the other (s38(4)). ZiG
+        amounts are converted at the rate in force on the day, and the return lists every rate it used.</p>
+    </div>
+    <div>
+      <h3>The rules as they stand</h3>
+      <p>Each transaction is taxed at the rate in force on its date, including the 15.5% rate from the 2026 National
+        Budget. It also handles blocked input tax, mixed-use purchases and imported services.</p>
+    </div>
+    <div>
+      <h3>Every figure can be traced</h3>
+      <p>Click any figure on the return to see the transactions behind it and how each was calculated, down to the
+        original row in your file. Every change is recorded in an audit log.</p>
+    </div>
+    <div>
+      <h3>Deadlines and penalties</h3>
+      <p>The dashboard shows when each return is due, and reminder emails go out 10, 5 and 2 days before. A late
+        return shows an estimate of the penalty building up.</p>
+    </div>
+    <div>
+      <h3>Registration threshold</h3>
+      <p>For a business that isn't registered yet, it tracks taxable sales over the last 12 months against the
+        US$25,000 threshold, and says when registration becomes compulsory (s23).</p>
+    </div>
+    <div>
+      <h3>Your data stays here</h3>
+      <p>Classification runs on this server. Your transactions are not sent to any outside service.</p>
+    </div>
+  </div>
+</section>
+
+<section class="card note">
+  <h2>Good to know</h2>
+  <ul>
+    <li>It prepares the return; you still submit it in ZIMRA TaRMS.</li>
+    <li>The VAT rates, rules and exchange rates it uses can all be changed in the app. Confirm them with your tax adviser
+      before relying on the figures.</li>
+    <li>It works on any phone, tablet or computer, and can be added to your home screen like an app.</li>
+  </ul>
+</section>
+
+<section class="cta">
+  <h2>{{ 'See it working on sample data' if demo_login else 'Get started' }}</h2>
+  <div class="actions">
+    {% if demo_login %}{{ demo_button('Open the demo') }}{% else %}<a class="button" href="/register">Create an account</a>{% endif %}
+    <a class="button secondary" href="/login">Sign in</a>
+  </div>
+</section>
+
+<footer class="site-footer small muted">T-Tech Solutions · VAT Computation System</footer>
+{% endblock %}

@@ -26,7 +26,7 @@ from ..checks import run_checks
 from ..classify import validate_rule_pattern
 from ..compute import LINE_LABELS, compute_return
 from ..db import Database
-from ..demo import EMAIL as DEMO_EMAIL
+from ..demo import EMAIL as DEMO_EMAIL, PASSWORD as DEMO_PASSWORD
 from ..export import return_to_csv, return_to_xlsx
 from ..ingest import (
     FIELD_LABELS,
@@ -262,7 +262,17 @@ def create_app(db: Database | None = None, storage_dir: Path | None = None) -> F
     # ---- businesses ----------------------------------------------------
 
     @app.get("/", response_class=HTMLResponse)
-    def home(request: Request, user: User = Depends(current_user), s: Session = Depends(get_db)):
+    def home(request: Request, s: Session = Depends(get_db)):
+        uid = request.session.get("uid")
+        user = s.get(User, uid) if uid else None
+        if not user:
+            # Signed-out visitors get the landing page. The one-click demo is offered only when the demo
+            # account is a regular user (a public demo), never when it would sign someone in as an administrator.
+            demo = s.scalar(select(User).where(User.email == DEMO_EMAIL))
+            return render(request, "landing.html", demo_login=(DEMO_EMAIL, DEMO_PASSWORD)
+                          if demo and not demo.is_admin else None)
+        if user.must_change_password:
+            raise PasswordChangeRequired()
         q = select(Business).order_by(Business.name)
         if not user.is_admin:
             q = q.where(Business.owner_id == user.id)

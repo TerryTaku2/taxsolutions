@@ -68,7 +68,7 @@ Create a Web Service from this repository with:
 | Start command | `python -m vatsys.demo && uvicorn vatsys.web.app:create_app --factory --host 0.0.0.0 --port $PORT` |
 | Environment variables | `VATSYS_SECRET_KEY` (a long random value), `VATSYS_PUBLIC_DEMO=1`, and optionally `VATSYS_GOATCOUNTER` to count visitors |
 
-`VATSYS_PUBLIC_DEMO=1` makes the demo account a regular user, because its password is published. On Render's free plan the disk is wiped whenever the service restarts, so the start command reloads the demo data each time; that also resets any changes visitors make. Don't put real client data on a free instance: it has no persistent storage. For real use, attach a persistent disk or a PostgreSQL database (`VATSYS_DATABASE_URL`).
+`VATSYS_PUBLIC_DEMO=1` makes the demo account a regular user, because its password is published. The landing page that signed-out visitors see at `/` then shows a **Try the demo** button that signs in to it in one click. The button is never shown when the demo account is an administrator. On Render's free plan the disk is wiped whenever the service restarts, so the start command reloads the demo data each time; that also resets any changes visitors make. Don't put real client data on a free instance: it has no persistent storage. For real use, attach a persistent disk or a PostgreSQL database (`VATSYS_DATABASE_URL`).
 
 ## Configuration
 

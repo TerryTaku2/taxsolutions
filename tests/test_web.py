@@ -82,8 +82,8 @@ def test_full_flow(client):
 
 
 def test_requires_login_and_csrf(client):
-    r = client.get("/", follow_redirects=False)
-    assert r.status_code == 303
+    r = client.get("/businesses/new", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/login"
     register(client)
     r = client.post("/businesses/new", data={"csrf": "wrong", "name": "X"})
     assert r.status_code == 400
@@ -128,3 +128,12 @@ def test_installable_on_phones(client):
     assert manifest["display"] == "standalone"
     for icon in manifest["icons"]:
         assert client.get(icon["src"]).headers["content-type"] == "image/png"
+
+
+def test_landing_page_for_signed_out_visitors(client):
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "Your VAT return, worked out" in r.text and 'href="/login"' in r.text
+    assert "Try the demo" not in r.text  # no demo account loaded
+    register(client)
+    assert "<h1>Businesses</h1>" in client.get("/").text  # signed in: straight to the businesses

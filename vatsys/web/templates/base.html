@@ -33,6 +33,8 @@
         <button class="link small">Sign out</button>
       </form>
     </div>
+    {% elif request.url.path != '/login' %}
+    <a class="header-signin" href="/login">Sign in</a>
     {% endif %}
   </div>
 </header>
