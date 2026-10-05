@@ -169,6 +169,12 @@ def create_app(db: Database | None = None, storage_dir: Path | None = None) -> F
                                                           "count_event": count_event, **ctx},
                                           status_code=status_code)
 
+    def public_demo_login(s: Session) -> tuple[str, str] | None:
+        """The demo sign-in for one-click buttons, offered only when the demo account is a regular user
+        (a public demo), never when it would sign someone in as an administrator."""
+        demo = s.scalar(select(User).where(User.email == DEMO_EMAIL))
+        return (DEMO_EMAIL, DEMO_PASSWORD) if demo and not demo.is_admin else None
+
     def redirect(url: str) -> RedirectResponse:
         return RedirectResponse(url, status_code=303)
 
@@ -189,7 +195,7 @@ def create_app(db: Database | None = None, storage_dir: Path | None = None) -> F
     def login_page(request: Request, s: Session = Depends(get_db)):
         if s.scalar(select(func.count(User.id))) == 0:
             return redirect("/register")
-        return render(request, "login.html")
+        return render(request, "login.html", demo_login=public_demo_login(s))
 
     @app.post("/login", dependencies=[Depends(csrf_protect)])
     def login(request: Request, email: str = Form(...), password: str = Form(...), s: Session = Depends(get_db)):
@@ -266,11 +272,7 @@ def create_app(db: Database | None = None, storage_dir: Path | None = None) -> F
         uid = request.session.get("uid")
         user = s.get(User, uid) if uid else None
         if not user:
-            # Signed-out visitors get the landing page. The one-click demo is offered only when the demo
-            # account is a regular user (a public demo), never when it would sign someone in as an administrator.
-            demo = s.scalar(select(User).where(User.email == DEMO_EMAIL))
-            return render(request, "landing.html", demo_login=(DEMO_EMAIL, DEMO_PASSWORD)
-                          if demo and not demo.is_admin else None)
+            return render(request, "landing.html", demo_login=public_demo_login(s))
         if user.must_change_password:
             raise PasswordChangeRequired()
         q = select(Business).order_by(Business.name)

@@ -1,0 +1,9 @@
+{# One-click sign-in to the public demo account. Pages pass demo_login only when that is safe. #}
+{% macro demo_button(label, classes='') %}
+<form class="inline" method="post" action="/login">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="email" value="{{ demo_login[0] }}">
+  <input type="hidden" name="password" value="{{ demo_login[1] }}">
+  <button class="{{ classes }}">{{ label }}</button>
+</form>
+{% endmacro %}

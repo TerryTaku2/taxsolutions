@@ -21,13 +21,15 @@ def test_public_demo_account_is_not_admin(db, tmp_path, monkeypatch):
         assert not s.scalar(select(User).where(User.email == EMAIL)).is_admin
 
 
-def test_landing_page_offers_the_public_demo_only(db, tmp_path, client):
+def test_one_click_demo_is_offered_for_the_public_demo_only(db, tmp_path, client):
     load_demo(db, tmp_path)  # the first account: an administrator, so its sign-in is never offered
     assert "Try the demo" not in client.get("/").text
+    assert "Try the demo" not in client.get("/login").text
 
     with db.session() as s:
         s.scalar(select(User).where(User.email == EMAIL)).is_admin = False
         s.commit()
+    assert "Try the demo" in client.get("/login").text
     r = client.get("/")
     assert "Try the demo" in r.text
     r = client.post("/login", data={"csrf": csrf_from(r.text), "email": EMAIL, "password": "demo-password-123"})
