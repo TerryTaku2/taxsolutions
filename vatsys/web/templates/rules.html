@@ -30,7 +30,7 @@
 {% endif %}
 
 <h2>Rules</h2>
-<div class="table-wrap"><table>
+<div class="table-wrap"><table class="stack">
   <thead><tr><th>Scope</th><th class="num">Priority</th><th>Match</th><th>Applies to</th><th>Category</th><th>In force</th><th>Note</th><th></th></tr></thead>
   <tbody>{% for r in rules %}
     <tr style="{{ 'opacity:.5' if not r.active }}">

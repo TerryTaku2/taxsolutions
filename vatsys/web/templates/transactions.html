@@ -27,9 +27,9 @@
   <input type="hidden" name="csrf" value="{{ csrf }}">
   <input type="hidden" name="return_to" value="{{ request.url.path }}?{{ request.url.query }}">
   <div class="table-wrap">
-  <table>
+  <table class="stack">
     <thead><tr>
-      <th><input type="checkbox" aria-label="Select all" onclick="document.querySelectorAll('input[name=selected]:not(:disabled)').forEach(c => c.checked = this.checked)"></th>
+      <th data-label="Select"><input type="checkbox" aria-label="Select all" onclick="document.querySelectorAll('input[name=selected]:not(:disabled)').forEach(c => c.checked = this.checked)"></th>
       <th>Date</th><th>Description</th><th>Type</th><th class="num">Amount</th><th>VAT category</th><th>Input tax</th><th>Basis</th><th>Exclude</th><th></th>
     </tr></thead>
     <tbody>

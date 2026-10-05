@@ -3,6 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f6b5c">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="T-Tech VAT">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>{% block title %}VAT Computation System{% endblock %}</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -11,18 +18,21 @@
   <div class="inner">
     <a class="brand" href="/">T-Tech <span>VAT</span></a>
     {% if user %}
-    <nav class="main">
-      <a href="/">Businesses</a>
-      <a href="/settings/reference">Reference lists</a>
-      <a href="/settings/rules">Classification rules</a>
-      <a href="/settings/rates">VAT rates</a>
-      <a href="/settings/fx">Exchange rates</a>
-    </nav>
-    <a class="muted small" href="/account/password" title="Change password">{{ user.name }}{% if user.is_admin %} · admin{% endif %}</a>
-    <form class="inline" method="post" action="/logout">
-      <input type="hidden" name="csrf" value="{{ csrf }}">
-      <button class="link small">Sign out</button>
-    </form>
+    <button type="button" class="menu-toggle secondary small" aria-expanded="false" aria-controls="site-menu">Menu</button>
+    <div class="menu" id="site-menu">
+      <nav class="main">
+        <a href="/">Businesses</a>
+        <a href="/settings/reference">Reference lists</a>
+        <a href="/settings/rules">Classification rules</a>
+        <a href="/settings/rates">VAT rates</a>
+        <a href="/settings/fx">Exchange rates</a>
+      </nav>
+      <a class="muted small" href="/account/password" title="Change password">{{ user.name }}{% if user.is_admin %} · admin{% endif %}</a>
+      <form class="inline" method="post" action="/logout">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="link small">Sign out</button>
+      </form>
+    </div>
     {% endif %}
   </div>
 </header>
@@ -52,6 +62,27 @@
   {% endif %}
   {% block content %}{% endblock %}
 </main>
+<script>
+  // Phone layout: the header menu opens from a button, and tables marked "stack" show each row as a card,
+  // labelling every cell with its column heading. Without JavaScript the menu stays open and tables scroll.
+  document.documentElement.classList.add('js');
+  var toggle = document.querySelector('.menu-toggle');
+  if (toggle) toggle.addEventListener('click', function () {
+    var open = document.querySelector('header.top').classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open);
+  });
+  document.querySelectorAll('table.stack').forEach(function (table) {
+    var labels = Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) {
+      var named = th.querySelector('[aria-label]');
+      return th.getAttribute('data-label') || th.textContent.trim() || (named ? named.getAttribute('aria-label') : '');
+    });
+    table.querySelectorAll('tbody tr').forEach(function (tr) {
+      Array.prototype.forEach.call(tr.cells, function (td, i) {
+        if (labels[i] && td.colSpan === 1) td.setAttribute('data-label', labels[i]);
+      });
+    });
+  });
+</script>
 {% if goatcounter %}
 <script>
   // Count page addresses only, with record numbers grouped (/b/1/transactions/57 -> /b/:id/transactions/:id),

@@ -2,7 +2,7 @@
 {% block content %}
 <h1>VAT rates</h1>
 <p class="muted">Each transaction uses the rate in force on its date. When the law changes, add the new rate with its start date; the previous rate is closed the day before. Returns already finalised keep their recorded figures.</p>
-<div class="table-wrap"><table>
+<div class="table-wrap"><table class="stack">
   <thead><tr><th>Category</th><th class="num">Rate</th><th>From</th><th>To</th><th>Note</th><th></th></tr></thead>
   <tbody>{% for r in rates %}
     <tr>

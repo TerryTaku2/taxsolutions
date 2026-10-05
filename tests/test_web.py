@@ -116,3 +116,15 @@ def test_bad_mapping_can_be_fixed(client):
                           "map_amount": "2", "source_type": "ledger", "default_direction": "sale",
                           "default_currency": "USD", "amounts_include_vat": "yes"})
     assert "Re-imported: 1 transaction(s)" in r.text
+
+
+def test_installable_on_phones(client):
+    """The login page links a web app manifest, which is served without signing in, and its icons exist."""
+    r = client.get("/login")
+    assert 'rel="manifest" href="/static/manifest.webmanifest"' in r.text
+    r = client.get("/static/manifest.webmanifest")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("application/manifest+json")
+    manifest = r.json()
+    assert manifest["display"] == "standalone"
+    for icon in manifest["icons"]:
+        assert client.get(icon["src"]).headers["content-type"] == "image/png"

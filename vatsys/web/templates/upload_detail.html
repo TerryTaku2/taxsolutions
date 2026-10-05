@@ -28,7 +28,7 @@
 {% if upload.row_errors %}
 <h3>Rows that could not be read</h3>
 <p class="small muted">Fix these in the file and upload again, or correct the column mapping below.</p>
-<div class="table-wrap"><table>
+<div class="table-wrap"><table class="stack">
   <thead><tr><th>Row</th><th>Problem</th><th>Values</th></tr></thead>
   <tbody>{% for e in upload.row_errors[:200] %}
     <tr><td>{{ e.row }}</td><td>{{ e.errors|join('; ') }}</td>

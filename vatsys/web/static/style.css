@@ -46,6 +46,8 @@ header.top { background: var(--surface); border-bottom: 1px solid var(--border);
 header.top .inner { max-width: 1280px; margin: 0 auto; padding: .7rem 16px; display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; }
 .brand { font-weight: 700; color: var(--text); }
 .brand span { color: var(--accent); }
+.menu { display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; flex: 1; }
+.menu-toggle { display: none; }
 nav.main { display: flex; gap: 1rem; flex-wrap: wrap; flex: 1; }
 nav.main a { color: var(--muted); }
 nav.main a.active, nav.main a:hover { color: var(--text); }
@@ -117,6 +119,52 @@ code { font-size: .85rem; background: var(--bg); padding: .05rem .3rem; border-r
   h1 { font-size: 1.3rem; }
   dl.kv { grid-template-columns: 1fr; }
   dl.kv dt { margin-top: .4rem; }
+}
+
+/* Phones and small tablets */
+@media (max-width: 760px) {
+  main { padding-top: 1rem; }
+  /* Header: links fold behind the Menu button (only when JavaScript can open it again) */
+  .js .menu-toggle { display: inline-block; margin-left: auto; }
+  .js header.top:not(.open) .menu { display: none; }
+  .menu { flex-basis: 100%; flex-direction: column; align-items: stretch; gap: 0; }
+  nav.main { flex-direction: column; gap: 0; }
+  .menu > a, nav.main a { display: block; padding: .6rem 0; border-top: 1px solid var(--border); }
+  .menu form.inline { display: block; padding: .6rem 0; border-top: 1px solid var(--border); }
+  /* Business tabs: one row that swipes sideways instead of wrapping */
+  .subnav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .subnav::-webkit-scrollbar { display: none; }
+  .subnav a { white-space: nowrap; flex: none; }
+  /* 16px stops iOS zooming into a field when it is tapped */
+  input, select, textarea, td select, td input { font-size: 16px; }
+  .filters > div { flex: 1 1 140px; }
+  .filters input, .filters select { width: 100%; }
+  th, td { padding: .45rem .5rem; }
+  .auth { margin: 1.5rem auto; }
+  .auth .card { padding: 1.25rem; }
+  .sticky-bar { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; padding: .6rem; }
+  .sticky-bar > span { grid-column: 1 / -1; }
+  .sticky-bar select, .sticky-bar button { width: 100%; }
+
+  /* List tables: each row becomes a card, each cell labelled with its column heading */
+  .js table.stack thead { display: none; }
+  .js table.stack, .js table.stack tbody, .js table.stack tr, .js table.stack td { display: block; width: 100%; }
+  .js table.stack tr { padding: .6rem .8rem; border-bottom: 1px solid var(--border); }
+  .js table.stack tbody tr:last-child { border-bottom: 0; }
+  .js table.stack td { border: 0; padding: .2rem 0; text-align: left; white-space: normal; }
+  .js table.stack td[data-label] { position: relative; padding-left: 38%; min-height: 1.6rem; }
+  .js table.stack td[data-label]::before { content: attr(data-label); position: absolute; left: 0; width: 35%;
+    color: var(--muted); font-size: .8rem; padding-top: .1rem; overflow-wrap: anywhere; }
+  .js table.stack td:empty { display: none; }
+  .js table.stack td select { width: 100%; }
+}
+
+/* Touch screens: fingers need bigger targets than a mouse pointer */
+@media (pointer: coarse) {
+  button, .button, select, input:not([type=checkbox]):not([type=radio]) { min-height: 42px; }
+  .button { display: inline-flex; align-items: center; justify-content: center; }
+  button.link { min-height: 0; padding: .4rem 0; }
+  input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
 }
 
 /* Plain-language "what you owe" summary on the dashboard */

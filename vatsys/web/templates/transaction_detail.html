@@ -59,7 +59,7 @@
 
 <h3>History</h3>
 {% if history %}
-<div class="table-wrap"><table>
+<div class="table-wrap"><table class="stack">
   <thead><tr><th>When</th><th>Who</th><th>Change</th></tr></thead>
   <tbody>{% for h in history %}
     <tr><td class="nowrap">{{ h.at.strftime('%d %b %Y %H:%M') }}</td><td>{{ h.user.name if h.user else 'System' }}</td>

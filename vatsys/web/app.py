@@ -2,6 +2,7 @@
 
 import csv
 import io
+import mimetypes
 import re
 import secrets
 from collections import Counter
@@ -67,6 +68,8 @@ from ..security import hash_password, verify_password
 from ..summary import CURRENCY_NAMES, business_summaries, summarise
 
 HERE = Path(__file__).parent
+# Not every system's MIME table knows the web app manifest, and browsers expect this type for it.
+mimetypes.add_type("application/manifest+json", ".webmanifest")
 templates = Jinja2Templates(directory=HERE / "templates")
 templates.env.filters["money"] = fmt
 templates.env.filters["pct"] = lambda v: "" if v is None else f"{Decimal(v).normalize():f}%"

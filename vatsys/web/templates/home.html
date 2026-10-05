@@ -10,7 +10,7 @@
 
 {% if rows %}
 <div class="table-wrap" style="margin-top:1rem">
-<table>
+<table class="stack">
   <thead><tr><th>Business</th>{% if user.is_admin %}<th>Account holder</th>{% endif %}<th>VAT number</th><th>Next return</th><th>Due</th><th class="num">To pay</th><th>Status</th></tr></thead>
   <tbody>
   {% for b, d in rows %}
